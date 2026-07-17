@@ -36,3 +36,16 @@ test("keeps Firebase credentials out of tracked environment examples", async () 
   assert.match(layout, /CBU FIND/);
   await assert.rejects(access(new URL("../app/_sites-preview/SkeletonPreview.tsx", import.meta.url)));
 });
+
+test("lets Cloudflare serve static assets before the Worker", async () => {
+  const wrangler = JSON.parse(
+    await readFile(new URL("../wrangler.jsonc", import.meta.url), "utf8"),
+  );
+  assert.equal(wrangler.assets.directory, "dist/client");
+  assert.equal(wrangler.assets.binding, "ASSETS");
+  assert.equal(
+    Object.hasOwn(wrangler.assets, "run_worker_first"),
+    false,
+    "run_worker_first would route hashed JavaScript and CSS through the app Worker and make them return 404",
+  );
+});

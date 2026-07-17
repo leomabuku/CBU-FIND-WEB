@@ -29,6 +29,42 @@ export interface CampusItem {
   resolvedAt?: number | null;
 }
 
+export type MessageMediaType = "IMAGE" | "VIDEO" | "FILE";
+
+export interface ChatAttachment {
+  url: string;
+  type: MessageMediaType;
+  name: string;
+  sizeBytes: number;
+}
+
+export interface Conversation {
+  id: string;
+  participantIds: string[];
+  participantNames: Record<string, string>;
+  participantPhotoUrls: Record<string, string>;
+  itemId: string;
+  itemTitle: string;
+  itemImageUrl: string;
+  createdAt: number;
+  updatedAt: number;
+  lastMessage: string;
+  lastMessageType: "TEXT" | MessageMediaType;
+  lastSenderId: string;
+  lastReadAt: Record<string, number>;
+}
+
+export interface ChatMessage {
+  id: string;
+  senderId: string;
+  text: string;
+  mediaUrl: string;
+  mediaType: "" | MessageMediaType;
+  mediaName: string;
+  mediaSizeBytes: number;
+  createdAt: number;
+}
+
 export const ITEM_CATEGORIES = [
   "Student ID & Documents",
   "Phones & Electronics",

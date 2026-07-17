@@ -8,7 +8,7 @@ import { db } from "@/lib/firebase";
 import { readableError } from "@/lib/errors";
 import { CampusItem } from "@/lib/types";
 
-export function ItemDetails({ item, currentUserId, onClose, onResolved }: { item: CampusItem; currentUserId: string; onClose: () => void; onResolved: (item: CampusItem) => void }) {
+export function ItemDetails({ item, currentUserId, onMessage, onClose, onResolved }: { item: CampusItem; currentUserId: string; onMessage: () => Promise<void>; onClose: () => void; onResolved: (item: CampusItem) => void }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const images = item.imageUrls?.length ? item.imageUrls : item.imageUri ? [item.imageUri] : [];
@@ -22,6 +22,18 @@ export function ItemDetails({ item, currentUserId, onClose, onResolved }: { item
       const resolvedAt = Date.now();
       await updateDoc(doc(db, "items", item.id), { status: "RESOLVED", resolvedAt });
       onResolved({ ...item, status: "RESOLVED", resolvedAt });
+    } catch (caught) {
+      setError(readableError(caught));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function messageReporter() {
+    setBusy(true);
+    setError("");
+    try {
+      await onMessage();
     } catch (caught) {
       setError(readableError(caught));
     } finally {
@@ -43,7 +55,8 @@ export function ItemDetails({ item, currentUserId, onClose, onResolved }: { item
           <section><h3>Contact</h3><p>{item.contactInfo || "No contact details provided."}</p></section>
           {error && <p className="form-error">{error}</p>}
           <div className="details-actions">
-            <a className="primary-button" href={item.contactInfo.includes("@") ? `mailto:${item.contactInfo}` : `tel:${item.contactInfo.replace(/\s/g, "")}`}><MessageCircle size={18} />Contact reporter</a>
+            {item.userId !== currentUserId && <button className="primary-button" onClick={messageReporter} disabled={busy}><MessageCircle size={18} />{busy ? "Opening chat…" : "Message reporter"}</button>}
+            <a className="secondary-button" href={item.contactInfo.includes("@") ? `mailto:${item.contactInfo}` : `tel:${item.contactInfo.replace(/\s/g, "")}`}>Use contact details</a>
             {item.userId === currentUserId && item.status === "ACTIVE" && <button className="secondary-button" onClick={resolve} disabled={busy}>{busy ? "Updating…" : "Mark as returned"}</button>}
           </div>
         </div>

@@ -3,19 +3,21 @@
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { onAuthStateChanged, signOut } from "firebase/auth";
-import { collection, doc, getDoc, onSnapshot, orderBy, query, setDoc } from "firebase/firestore";
-import { Bell, CheckCircle2, CircleUserRound, Grid2X2, ListFilter, LogOut, Menu, Moon, Plus, Search, Sun, Wifi, WifiOff, X } from "lucide-react";
+import { collection, doc, getDoc, onSnapshot, orderBy, query, setDoc, where } from "firebase/firestore";
+import { Bell, CheckCircle2, CircleUserRound, Grid2X2, ListFilter, LogOut, Menu, MessageCircle, Moon, Plus, Search, Sun, Wifi, WifiOff, X } from "lucide-react";
 import { auth, db } from "@/lib/firebase";
 import { readableError } from "@/lib/errors";
-import { CampusItem, CampusUser, ITEM_CATEGORIES, ItemType } from "@/lib/types";
+import { startConversation, isConversationUnread } from "@/lib/chat";
+import { CampusItem, CampusUser, Conversation, ITEM_CATEGORIES, ItemType } from "@/lib/types";
 import { AuthScreen } from "@/components/AuthScreen";
 import { Brand } from "@/components/Brand";
 import { ItemCard } from "@/components/ItemCard";
 import { ItemDetails } from "@/components/ItemDetails";
+import { MessagingPanel } from "@/components/MessagingPanel";
 import { ProfilePanel } from "@/components/ProfilePanel";
 import { ReportForm } from "@/components/ReportForm";
 
-type View = "feed" | "report" | "profile";
+type View = "feed" | "report" | "messages" | "profile";
 
 const emptyProfile = (firebaseUser: import("firebase/auth").User): Omit<CampusUser, "id"> => ({
   name: firebaseUser.displayName || "",
@@ -32,6 +34,8 @@ export function CampusFindApp() {
   const [user, setUser] = useState<CampusUser | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [items, setItems] = useState<CampusItem[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [openConversationId, setOpenConversationId] = useState("");
   const [view, setView] = useState<View>("feed");
   const [selectedType, setSelectedType] = useState<ItemType>("LOST");
   const [selectedCategory, setSelectedCategory] = useState("");
@@ -55,6 +59,7 @@ export function CampusFindApp() {
     if (!firebaseUser) {
       setUser(null);
       setItems([]);
+      setConversations([]);
       setAuthReady(true);
       return;
     }
@@ -91,6 +96,18 @@ export function CampusFindApp() {
     );
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+    return onSnapshot(
+      query(collection(db, "conversations"), where("participantIds", "array-contains", user.id), orderBy("updatedAt", "desc")),
+      (snapshot) => {
+        setConversations(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() } as Conversation)));
+        setError("");
+      },
+      (caught) => setError(readableError(caught)),
+    );
+  }, [user]);
+
   const visibleItems = useMemo(() => {
     const needle = search.trim().toLowerCase();
     return items.filter((item) => {
@@ -112,11 +129,19 @@ export function CampusFindApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (!authReady) return <div className="app-loader"><Image src="/cbu-find-logo.png" alt="CBU FIND" width={72} height={72} priority /><span>Connecting to campus reports…</span></div>;
+  if (!authReady) return <div className="app-loader"><Image src="/cbu-find-logo.png" alt="CBU FIND" width={72} height={72} priority unoptimized /><span>Connecting to campus reports…</span></div>;
   if (!user) return <AuthScreen />;
 
   const activeLost = items.filter((item) => item.type === "LOST" && item.status === "ACTIVE").length;
   const activeFound = items.filter((item) => item.type === "FOUND" && item.status === "ACTIVE").length;
+  const unreadMessages = conversations.filter((conversation) => isConversationUnread(conversation, user.id)).length;
+
+  async function messageReporter(item: CampusItem) {
+    const conversationId = await startConversation(item, user);
+    setOpenConversationId(conversationId);
+    setSelectedItem(null);
+    navigate("messages");
+  }
 
   return (
     <div className="app-shell">
@@ -125,6 +150,7 @@ export function CampusFindApp() {
         <nav>
           <button className={view === "feed" ? "active" : ""} onClick={() => navigate("feed")}><Grid2X2 />Browse reports</button>
           <button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}><Plus />Create report</button>
+          <button className={view === "messages" ? "active" : ""} onClick={() => navigate("messages")}><MessageCircle />Messages{unreadMessages > 0 && <span className="sidebar__badge">{unreadMessages}</span>}</button>
           <button className={view === "profile" ? "active" : ""} onClick={() => navigate("profile")}><CircleUserRound />My profile</button>
         </nav>
         <div className="sidebar__summary">
@@ -149,9 +175,9 @@ export function CampusFindApp() {
           </div>
         </header>
 
-        <main className="content">
+        <main className={`content ${view === "messages" ? "content--messages" : ""}`}>
           {error && <div className="global-alert">{error}<button onClick={() => setError("")}><X /></button></div>}
-          {view === "report" ? <ReportForm user={user} onCancel={() => navigate("feed")} onDone={() => navigate("feed")} /> : view === "profile" ? <ProfilePanel user={user} onUserChange={setUser} onOpenItem={setSelectedItem} /> : (
+          {view === "report" ? <ReportForm user={user} onCancel={() => navigate("feed")} onDone={() => navigate("feed")} /> : view === "messages" ? <MessagingPanel key={openConversationId || "inbox"} user={user} conversations={conversations} initialConversationId={openConversationId} onBrowseReports={() => navigate("feed")} /> : view === "profile" ? <ProfilePanel user={user} onUserChange={setUser} onOpenItem={setSelectedItem} /> : (
             <section className="feed-page">
               <header className="feed-hero">
                 <div><span className="eyebrow">Copperbelt University community board</span><h1>Find what matters.<br /><em>Return what belongs.</em></h1><p>Browse reports shared in real time by students on the web and Android app.</p></div>
@@ -177,9 +203,9 @@ export function CampusFindApp() {
         </main>
       </div>
 
-      <nav className="mobile-nav"><button className={view === "feed" ? "active" : ""} onClick={() => navigate("feed")}><Grid2X2 /><span>Browse</span></button><button className="mobile-nav__create" onClick={() => navigate("report")}><Plus /></button><button className={view === "profile" ? "active" : ""} onClick={() => navigate("profile")}><CircleUserRound /><span>Profile</span></button></nav>
+      <nav className="mobile-nav"><button className={view === "feed" ? "active" : ""} onClick={() => navigate("feed")}><Grid2X2 /><span>Browse</span></button><button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}><Plus /><span>Report</span></button><button className={view === "messages" ? "active" : ""} onClick={() => navigate("messages")}><MessageCircle /><span>Messages</span>{unreadMessages > 0 && <i>{unreadMessages}</i>}</button><button className={view === "profile" ? "active" : ""} onClick={() => navigate("profile")}><CircleUserRound /><span>Profile</span></button></nav>
 
-      {selectedItem && <ItemDetails item={selectedItem} currentUserId={user.id} onClose={() => setSelectedItem(null)} onResolved={(updated) => { setSelectedItem(updated); setItems((current) => current.map((item) => item.id === updated.id ? updated : item)); }} />}
+      {selectedItem && <ItemDetails item={selectedItem} currentUserId={user.id} onMessage={() => messageReporter(selectedItem)} onClose={() => setSelectedItem(null)} onResolved={(updated) => { setSelectedItem(updated); setItems((current) => current.map((item) => item.id === updated.id ? updated : item)); }} />}
     </div>
   );
 }

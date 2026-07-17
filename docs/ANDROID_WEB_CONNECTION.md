@@ -7,6 +7,7 @@ Both applications are clients of the same services:
 | Identity | Firebase Authentication project `cbu-lost-and-found` |
 | Profiles | Cloud Firestore collection `users` |
 | Reports | Cloud Firestore collection `items` |
+| Inboxes and chat | Cloud Firestore `conversations` and nested `messages` |
 | Images | Cloudinary cloud `campuslostandfound` |
 | Live updates | Firestore snapshot listeners |
 
@@ -50,6 +51,18 @@ Path: `items/{generatedDocumentId}`
 
 Do not rename enums or convert timestamps to Firestore `Timestamp` objects without updating Android and web together.
 
+## Conversation document
+
+Path: `conversations/{itemId}_{sortedParticipantUid1}_{sortedParticipantUid2}`
+
+Each report and pair of users has one deterministic conversation. The document stores the two participant UIDs, display-name/photo snapshots, report context, latest-message preview, and per-user `lastReadAt` values. Only listed participants can read or update it.
+
+## Message document
+
+Path: `conversations/{conversationId}/messages/{generatedDocumentId}`
+
+Messages contain `senderId`, optional `text`, optional Cloudinary `mediaUrl`, `mediaType` (`IMAGE`, `VIDEO`, `FILE`, or empty), original `mediaName`, `mediaSizeBytes`, and millisecond `createdAt`. Messages are append-only and limited to 4,000 text characters and 20 MB attachments.
+
 ## Shared categories
 
 The exact category strings live in `lib/types.ts` and mirror `ItemCategories` in Android. Treat spelling changes as a schema migration because existing filters compare exact strings.
@@ -60,6 +73,7 @@ The included `firestore.indexes.json` supports Android queries:
 
 - `type ASC, date DESC`
 - `userId ASC, date DESC`
+- `participantIds ARRAY_CONTAINS, updatedAt DESC`
 
 The web feed reads all reports ordered by date and filters locally. The profile view uses the `userId/date` index.
 
@@ -72,6 +86,8 @@ The web feed reads all reports ordered by date and filters locally. The profile 
 5. Publish a `FOUND` report on Android; confirm it appears on web.
 6. Mark one report returned on the owner client; confirm the other client hides it unless “Show returned” is enabled.
 7. Confirm photos load in both clients.
+8. From a report owned by another user, open a conversation and send a text message on web; confirm it appears on Android.
+9. Reply from Android with an image or file; confirm the web inbox marks it unread and renders the attachment.
 
 ## Making schema changes safely
 

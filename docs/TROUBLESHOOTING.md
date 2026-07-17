@@ -46,3 +46,23 @@ Deploy `firestore.indexes.json` and wait for both composite indexes to become En
 ## Build command fails on Windows
 
 Use `npm.cmd` if PowerShell blocks `npm.ps1`, or adjust the local execution policy according to your organization's security policy. Project scripts are cross-platform and do not rely on Unix-only inline environment syntax.
+
+## Wrangler says you are not authenticated
+
+Run `npx wrangler login`, approve the browser authorization, then confirm the correct account with `npx wrangler whoami`.
+
+## Cloudflare deploy fails after uploading assets
+
+- Retry once if the error says Cloudflare's API hostname could not be resolved.
+- Run `Resolve-DnsName api.cloudflare.com` to check DNS.
+- Confirm `nodejs_compat` appears only once in the generated `dist/server/wrangler.json`.
+- Run `npm run deploy:cloudflare:dry` before another production attempt.
+- Inspect Wrangler's reported log file for the Cloudflare error code.
+
+## The Cloudflare site stays on the logo and connecting message
+
+Check one of the hashed `/assets/*.js` URLs from the page source. It must return HTTP 200 with a JavaScript content type. If it returns 404, confirm the `assets` block in `wrangler.jsonc` does not contain `run_worker_first: ["/*"]`. Cloudflare must serve matching static assets before forwarding unmatched application routes to the Worker. Rebuild, redeploy, and then hard-refresh the browser.
+
+## The Cloudflare site loads but Google or phone sign-in fails
+
+Add the exact `workers.dev` or custom hostname to Firebase Authentication's Authorized domains. Email/password sign-in alone is not sufficient proof that OAuth and phone flows are correctly configured.

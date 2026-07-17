@@ -1,6 +1,12 @@
 # CBU FIND Web
 
-The responsive web client for CBU FIND, Copperbelt University's community lost-and-found service. It connects to the same Firebase Authentication and Cloud Firestore project as the native Android app, so accounts, profiles, reports, photos, and returned-item status stay synchronized across both clients.
+The responsive web client for CBU FIND, Copperbelt University's community lost-and-found service. It connects to the same Firebase Authentication and Cloud Firestore project as the native Android app, so accounts, profiles, reports, conversations, media, and returned-item status stay synchronized across both clients.
+
+## Live website
+
+**Production:** [https://cbu-find-web.leokmabuku.workers.dev](https://cbu-find-web.leokmabuku.workers.dev)
+
+The public website is hosted directly on Cloudflare Workers. Firebase continues to provide shared authentication and data for Android and web; Cloudinary continues to deliver uploaded images.
 
 ## What the web app includes
 
@@ -9,6 +15,8 @@ The responsive web client for CBU FIND, Copperbelt University's community lost-a
 - Search, category filters, lost/found tabs, and returned-item filtering
 - Report creation with up to three compressed Cloudinary images
 - Full report details, safe contact actions, and owner-only "mark returned" updates
+- Participant-only inboxes with live chat, unread status, and shared message history
+- Chat uploads for photos, videos, PDFs, and text files up to 20 MB
 - Editable student profiles and a personal report history
 - Responsive desktop/mobile navigation and light/dark themes
 - Firebase-compatible field names and status values matching the Android app
@@ -33,7 +41,7 @@ Open `http://localhost:3000`.
 | Guide | Purpose |
 | --- | --- |
 | [Setup](docs/SETUP.md) | Firebase, Cloudinary, environment variables, and local run instructions |
-| [Connection contract](docs/ANDROID_WEB_CONNECTION.md) | Shared collections, fields, enums, indexes, and cross-device verification |
+| [Connection contract](docs/ANDROID_WEB_CONNECTION.md) | Shared reports, conversations, messages, fields, indexes, and cross-device verification |
 | [Architecture](docs/ARCHITECTURE.md) | Components, services, data flow, and design decisions |
 | [User guide](docs/USER_GUIDE.md) | Sign-in, reporting, browsing, profiles, and return workflow |
 | [Deployment](docs/DEPLOYMENT.md) | GitHub, production hosting, Firebase domains, and release checklist |
@@ -48,6 +56,8 @@ npm run dev      # local development
 npm run build    # production build
 npm test         # build plus rendered HTML checks
 npm run lint     # static checks
+npm run deploy:cloudflare:dry # validate the Cloudflare package
+npm run deploy:cloudflare     # build and deploy publicly
 ```
 
 ## Important boundary
