@@ -1,6 +1,10 @@
 const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET;
 
+import { ChatAttachment, MessageMediaType } from "./types";
+
+export const CHAT_MEDIA_MAX_BYTES = 20 * 1024 * 1024;
+
 export async function compressImage(file: File): Promise<Blob> {
   const bitmap = await createImageBitmap(file);
   const scale = Math.min(1, 1800 / Math.max(bitmap.width, bitmap.height));
@@ -37,4 +41,37 @@ export async function uploadImage(file: File, userId: string, kind: "reports" | 
     throw new Error(payload.error?.message || "Cloudinary could not upload this image.");
   }
   return payload.secure_url;
+}
+
+export async function uploadChatMedia(file: File, userId: string): Promise<ChatAttachment> {
+  if (!cloudName || !uploadPreset) {
+    throw new Error("Media uploads are not configured. Add the Cloudinary public settings.");
+  }
+  if (file.size > CHAT_MEDIA_MAX_BYTES) {
+    throw new Error("Chat attachments must be 20 MB or smaller.");
+  }
+
+  const mediaType: MessageMediaType = file.type.startsWith("image/")
+    ? "IMAGE"
+    : file.type.startsWith("video/")
+      ? "VIDEO"
+      : "FILE";
+  const body = new FormData();
+  body.append("file", file);
+  body.append("upload_preset", uploadPreset);
+  body.append("context", `app=cbu_find|uploaded_by=${userId}|kind=messages`);
+  const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
+    method: "POST",
+    body,
+  });
+  const payload = (await response.json()) as { secure_url?: string; error?: { message?: string } };
+  if (!response.ok || !payload.secure_url) {
+    throw new Error(payload.error?.message || "Cloudinary could not upload this attachment.");
+  }
+  return {
+    url: payload.secure_url,
+    type: mediaType,
+    name: file.name || "Attachment",
+    sizeBytes: file.size,
+  };
 }

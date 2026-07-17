@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0 — 2026-07-17
+
+- Added responsive inbox and private one-to-one report conversations.
+- Added real-time messages and unread indicators shared with the Android app.
+- Added Cloudinary chat uploads for images, videos, PDFs, and text files up to 20 MB.
+- Added participant-only Firestore rules and the conversation inbox index.
+- Added direct “Message reporter” actions to report details.
+
 ## 1.1.0 — 2026-07-17
 
 - Migrated public production hosting from OpenAI Sites to Cloudflare Workers.
