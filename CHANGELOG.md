@@ -7,6 +7,7 @@
 - Authorized the new `workers.dev` production hostname in Firebase Authentication.
 - Removed OpenAI Sites-specific runtime files and documentation.
 - Added Cloudflare deployment, custom-domain, rollback, and troubleshooting guidance.
+- Fixed Cloudflare static-asset routing so the client application loads beyond the initial connecting screen.
 
 ## 1.0.0 — 2026-07-17
 

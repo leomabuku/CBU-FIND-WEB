@@ -59,6 +59,10 @@ Run `npx wrangler login`, approve the browser authorization, then confirm the co
 - Run `npm run deploy:cloudflare:dry` before another production attempt.
 - Inspect Wrangler's reported log file for the Cloudflare error code.
 
+## The Cloudflare site stays on the logo and connecting message
+
+Check one of the hashed `/assets/*.js` URLs from the page source. It must return HTTP 200 with a JavaScript content type. If it returns 404, confirm the `assets` block in `wrangler.jsonc` does not contain `run_worker_first: ["/*"]`. Cloudflare must serve matching static assets before forwarding unmatched application routes to the Worker. Rebuild, redeploy, and then hard-refresh the browser.
+
 ## The Cloudflare site loads but Google or phone sign-in fails
 
 Add the exact `workers.dev` or custom hostname to Firebase Authentication's Authorized domains. Email/password sign-in alone is not sufficient proof that OAuth and phone flows are correctly configured.
