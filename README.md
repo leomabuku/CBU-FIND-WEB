@@ -2,6 +2,12 @@
 
 The responsive web client for CBU FIND, Copperbelt University's community lost-and-found service. It connects to the same Firebase Authentication and Cloud Firestore project as the native Android app, so accounts, profiles, reports, photos, and returned-item status stay synchronized across both clients.
 
+## Live website
+
+**Production:** [https://cbu-find-web.leokmabuku.workers.dev](https://cbu-find-web.leokmabuku.workers.dev)
+
+The public website is hosted directly on Cloudflare Workers. Firebase continues to provide shared authentication and data for Android and web; Cloudinary continues to deliver uploaded images.
+
 ## What the web app includes
 
 - Email/password, Google, and phone authentication
@@ -48,6 +54,8 @@ npm run dev      # local development
 npm run build    # production build
 npm test         # build plus rendered HTML checks
 npm run lint     # static checks
+npm run deploy:cloudflare:dry # validate the Cloudflare package
+npm run deploy:cloudflare     # build and deploy publicly
 ```
 
 ## Important boundary

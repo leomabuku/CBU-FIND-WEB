@@ -112,7 +112,7 @@ export function CampusFindApp() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  if (!authReady) return <div className="app-loader"><Image src="/cbu-find-logo.png" alt="CBU FIND" width={72} height={72} priority /><span>Connecting to campus reports…</span></div>;
+  if (!authReady) return <div className="app-loader"><Image src="/cbu-find-logo.png" alt="CBU FIND" width={72} height={72} priority unoptimized /><span>Connecting to campus reports…</span></div>;
   if (!user) return <AuthScreen />;
 
   const activeLost = items.filter((item) => item.type === "LOST" && item.status === "ACTIVE").length;

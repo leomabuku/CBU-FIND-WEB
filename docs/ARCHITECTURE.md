@@ -42,4 +42,6 @@ Only the light/dark theme preference is stored in `localStorage`. Accounts, prof
 
 ## Hosting
 
-`.openai/hosting.json` retains the Sites project identifier after creation. D1 and R2 are intentionally unused because Firebase and Cloudinary are the Android app's existing shared services.
+Vinext compiles the React application into a Cloudflare Worker entry point under `dist/server` and browser assets under `dist/client`. The Cloudflare Vite plugin generates the deployable Wrangler configuration, while the version-controlled `wrangler.jsonc` provides the Worker name, compatibility settings, public route, asset binding, and observability configuration.
+
+Cloudflare D1, R2, and Workers identity are intentionally unused because Firebase and Cloudinary are the Android app's existing shared services.

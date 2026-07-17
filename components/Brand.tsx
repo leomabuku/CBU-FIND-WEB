@@ -4,7 +4,7 @@ export function Brand({ compact = false }: { compact?: boolean }) {
   return (
     <div className={`brand ${compact ? "brand--compact" : ""}`}>
       <span className="brand__mark">
-        <Image src="/cbu-find-logo.png" alt="" width={44} height={44} priority />
+        <Image src="/cbu-find-logo.png" alt="" width={44} height={44} priority unoptimized />
       </span>
       <span>
         <strong>CBU FIND</strong>
